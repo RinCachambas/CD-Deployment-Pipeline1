@@ -1,0 +1,82 @@
+
+name: CD & Deployment Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno de despliegue manual'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+jobs:
+  quality-gate:
+    name: Quality Gate
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      node-versions: '["20", "22"]'
+      run-lint: true
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: quality-gate
+    if: github.event_name == 'push' || inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
+
+    steps:
+      - name: Descargar Artifact de compilación
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+
+      - name: Desplegar en Staging
+        run: echo "Desplegando simulado en Staging..."
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [quality-gate, deploy-staging]
+    if: |
+      always() &&
+      needs.quality-gate.result == 'success' &&
+      (
+        (github.event_name == 'push' &&
+         github.ref == 'refs/heads/main') ||
+        (github.event_name == 'workflow_dispatch' &&
+         inputs.environment == 'production')
+      ) &&
+      (needs.deploy-staging.result == 'success' ||
+       needs.deploy-staging.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://example.com
+
+    steps:
+      - name: Descargar Artifact de compilación
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+
+      - name: Despliegue en Producción
+        run: echo "Ejecutando despliegue simulado en Producción..."
