@@ -1,0 +1,11 @@
+
+
+{
+  "name": "ci-cd-pipeline",
+  "version": "1.0.0",
+  "description": "Practica de CI/CD con GitHub Actions",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  }
+}
