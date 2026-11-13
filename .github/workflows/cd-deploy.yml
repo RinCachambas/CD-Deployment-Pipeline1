@@ -80,3 +80,4 @@ jobs:
 
       - name: Despliegue en Producción
         run: echo "Ejecutando despliegue simulado en Producción..."
+# Pipeline CI/CD configurado para staging y production
